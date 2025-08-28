@@ -56,3 +56,51 @@ export const getTrendingMovies = async (): Promise<TrendingMovie[] | undefined> 
 
     }
 }
+
+export const updateLikedMovies = async (movie: Movie) => {
+
+
+    try {
+
+        const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
+            Query.equal('title', movie.title)
+        ])
+
+        if (result.documents.length > 0) {
+            const existingMovie = result.documents[0];
+
+            await database.deleteDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                existingMovie.$id,
+            )
+        }
+        else {
+            await database.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), {
+                movie_id: movie.id,
+                count: 1,
+                title: movie.title,
+                poster_url: `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            })
+        }
+    }
+    catch (err) {
+        console.log({ "Error": err });
+    }
+
+}
+
+export const getLikedMovies = async (): Promise<SavedMovie[] | undefined> => {
+    try {
+        const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
+            Query.limit(5),
+        ])
+
+        return result.documents as unknown as SavedMovie[];
+    }
+    catch (error) {
+        console.log(error);
+        return undefined;
+
+    }
+}
